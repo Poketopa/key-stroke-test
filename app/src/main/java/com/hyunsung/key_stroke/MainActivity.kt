@@ -92,6 +92,18 @@ fun UserSelectionScreen(onSelectUser: (String) -> Unit) {
                 ) {
                     Text("사용자 B 테스트", fontSize = 16.sp)
                 }
+                
+                Divider(modifier = Modifier.padding(vertical = 8.dp))
+                
+                Button(
+                    onClick = { onSelectUser("verify") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.tertiary
+                    )
+                ) {
+                    Text("유저 검증하기", fontSize = 16.sp)
+                }
             }
         }
     }

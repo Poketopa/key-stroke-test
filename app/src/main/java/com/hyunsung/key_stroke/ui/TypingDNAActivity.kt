@@ -46,7 +46,10 @@ class TypingDNAActivity : ComponentActivity() {
         clearPattern()
         
         val userId = intent.getStringExtra(Constants.EXTRA_USER_ID) ?: Constants.USER_A
+        val isVerifyMode = userId == "verify"
+        
         Log.d(TAG, "Starting typing test for user: $userId")
+        Log.d(TAG, "Verify mode: $isVerifyMode")
         Log.d(TAG, "User ID length: ${userId.length}")
         Log.d(TAG, "User ID from Constants.USER_A: ${Constants.USER_A}")
         Log.d(TAG, "User ID from Constants.USER_B: ${Constants.USER_B}")
@@ -62,7 +65,11 @@ class TypingDNAActivity : ComponentActivity() {
             Log.d(TAG, "Network connection is available")
         }
         
-        val webView = createWebView(userId)
+        val webView = if (isVerifyMode) {
+            createWebView("verify")
+        } else {
+            createWebView(userId)
+        }
         setContentView(webView)
     }
     

@@ -146,6 +146,7 @@
             <button class="button" onclick="showRealTimePattern()">실시간 패턴 확인</button>
             <button class="button" onclick="startRecording()">녹화 시작</button>
             <button class="button secondary" onclick="clearPattern()">패턴 초기화</button>
+            <button class="button success" onclick="verifyUser()" id="verifyButton" style="display: none;">유저 검증하기</button>
         </div>
 
         <div id="result" class="result" style="display: none;"></div>
@@ -176,6 +177,15 @@
             document.getElementById('userInfo').style.backgroundColor = 
                 userId === 'user123456' ? '#e8f5e8' : '#fff3e0';
             clearText();
+            
+            // verify 모드인 경우 유저 검증 버튼 표시
+            if (id === 'verify') {
+                document.getElementById('verifyButton').style.display = 'block';
+                document.getElementById('currentUser').textContent = '유저 검증 모드';
+                document.getElementById('userInfo').style.backgroundColor = '#fff3cd';
+            } else {
+                document.getElementById('verifyButton').style.display = 'none';
+            }
             
             // 디버깅을 위한 로그
             console.log('User ID set to:', userId);
@@ -782,6 +792,101 @@
             } else {
                 showResult('안드로이드 환경에서만 사용 가능합니다.', 'error');
             }
+        }
+        
+        function verifyUser() {
+            if (typeof Android !== 'undefined') {
+                const pattern = Android.getAndroidTypingPattern();
+                const currentText = document.getElementById('typingArea').value;
+                
+                if (currentText.length < 5) {
+                    showResult('최소 5자 이상 입력해주세요.', 'error');
+                    return;
+                }
+                
+                showResult('유저 검증 중...', 'info');
+                
+                // 사용자 A와 B에 대해 각각 검증
+                Promise.all([
+                    verifyAgainstUser(USER_A, pattern, currentText, 'A'),
+                    verifyAgainstUser(USER_B, pattern, currentText, 'B')
+                ]).then(results => {
+                    const [scoreA, scoreB] = results;
+                    
+                    // 확률 계산 (점수가 높을수록 더 유사함)
+                    const totalScore = scoreA + scoreB;
+                    const probabilityA = totalScore > 0 ? (scoreA / totalScore * 100).toFixed(1) : 50;
+                    const probabilityB = totalScore > 0 ? (scoreB / totalScore * 100).toFixed(1) : 50;
+                    
+                    // 결론 도출
+                    let conclusion = '';
+                    if (scoreA > scoreB) {
+                        conclusion = `결론: 사용자 A로 확정! (${probabilityA}% 확률)`;
+                    } else if (scoreB > scoreA) {
+                        conclusion = `결론: 사용자 B로 확정! (${probabilityB}% 확률)`;
+                    } else {
+                        conclusion = '결론: 구분 불가 (동점)';
+                    }
+                    
+                    const resultMessage = `🔍 유저 검증 결과
+
+📊 점수:
+- 사용자 A: ${scoreA}점
+- 사용자 B: ${scoreB}점
+
+📈 확률:
+- 사용자 A: ${probabilityA}%
+- 사용자 B: ${probabilityB}%
+
+🎯 ${conclusion}`;
+                    
+                    showResult(resultMessage, scoreA > scoreB || scoreB > scoreA ? 'success' : 'info');
+                }).catch(error => {
+                    showResult(`유저 검증 실패: ${error.message}`, 'error');
+                });
+                
+            } else {
+                showResult('안드로이드 환경에서만 사용 가능합니다.', 'error');
+            }
+        }
+        
+        function verifyAgainstUser(userId, pattern, text, userLabel) {
+            return new Promise((resolve, reject) => {
+                const apiKey = "3a07f4dae8484fb7f70d0d0613a3a3e4";
+                const apiSecret = "d97ae110a884c19f47318d54373e27d9";
+                const auth = btoa(apiKey + ":" + apiSecret);
+                
+                const formData = new URLSearchParams();
+                formData.append('tp', pattern);
+                formData.append('text', text);
+                
+                fetch(`https://api.typingdna.com/verify/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + auth,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(`사용자 ${userLabel} 검증 결과:`, data);
+                    if (typeof Android !== 'undefined') {
+                        Android.logError(`사용자 ${userLabel} 검증 결과: ${JSON.stringify(data)}`);
+                    }
+                    
+                    // TypingDNA API 응답에서 점수 추출
+                    const score = data.score || data.result || 0;
+                    resolve(score);
+                })
+                .catch(error => {
+                    console.error(`사용자 ${userLabel} 검증 오류:`, error);
+                    if (typeof Android !== 'undefined') {
+                        Android.logError(`사용자 ${userLabel} 검증 오류: ${error.message}`);
+                    }
+                    reject(error);
+                });
+            });
         }
 
         function showResult(message, type) {
