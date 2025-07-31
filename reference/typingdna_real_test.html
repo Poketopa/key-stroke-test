@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypingDNA 실제 타이핑 테스트</title>
+    <script src="https://www.typingdna.com/scripts/typingdna.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .user-section {
+            border-left: 4px solid #007bff;
+        }
+        .user-section.user-b {
+            border-left-color: #28a745;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .enrolled {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .not-enrolled {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.clear {
+            background-color: #dc3545;
+        }
+        button.clear:hover {
+            background-color: #c82333;
+        }
+        .pattern-display {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .result {
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .verification-section {
+            border-left: 4px solid #ffc107;
+        }
+        .python-section {
+            border-left: 4px solid #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔤 TypingDNA 실제 타이핑 테스트</h1>
+    
+    <div class="container">
+        <h2>📋 테스트 가이드</h2>
+        <ol>
+            <li><strong>1단계</strong>: 사용자 A가 "helloworld"를 1번 타이핑하여 등록</li>
+            <li><strong>2단계</strong>: 사용자 B가 "helloworld"를 1번 타이핑하여 등록</li>
+            <li><strong>3단계</strong>: 각 사용자가 새로운 타이핑으로 검증 테스트</li>
+            <li><strong>4단계</strong>: Python 코드 생성 및 실행</li>
+        </ol>
+        <p><strong>중요:</strong> 각 타이핑마다 다른 속도와 스타일로 입력해주세요!</p>
+    </div>
+
+    <!-- 사용자 A 등록 섹션 -->
+    <div class="container user-section user-a">
+        <h2>👤 사용자 A 등록</h2>
+        <div class="status not-enrolled" id="user-a-status">등록되지 않음</div>
+        
+        <div id="user-a-enrollment">
+            <p><strong>텍스트를 입력하세요:</strong> "helloworld"</p>
+            <input type="text" id="user-a-input" placeholder="여기에 'helloworld'를 타이핑하세요..." value="helloworld">
+            <br>
+            <button onclick="enrollUserA()">사용자 A 등록</button>
+            <button onclick="clearUserA()" class="clear">초기화</button>
+        </div>
+        
+        <div id="user-a-patterns" style="display: none;">
+            <h3>등록된 패턴들:</h3>
+            <div id="user-a-pattern-list"></div>
+        </div>
+    </div>
+
+    <!-- 사용자 B 등록 섹션 -->
+    <div class="container user-section user-b">
+        <h2>👤 사용자 B 등록</h2>
+        <div class="status not-enrolled" id="user-b-status">등록되지 않음</div>
+        
+        <div id="user-b-enrollment">
+            <p><strong>텍스트를 입력하세요:</strong> "helloworld"</p>
+            <input type="text" id="user-b-input" placeholder="여기에 'helloworld'를 타이핑하세요..." value="helloworld">
+            <br>
+            <button onclick="enrollUserB()">사용자 B 등록</button>
+            <button onclick="clearUserB()" class="clear">초기화</button>
+        </div>
+        
+        <div id="user-b-patterns" style="display: none;">
+            <h3>등록된 패턴들:</h3>
+            <div id="user-b-pattern-list"></div>
+        </div>
+    </div>
+
+    <!-- 검증 테스트 섹션 -->
+    <div class="container verification-section">
+        <h2>🔍 검증 테스트</h2>
+        <div id="verification-section" style="display: none;">
+            <p><strong>검증할 텍스트를 입력하세요:</strong> "helloworld"</p>
+            <input type="text" id="verification-input" placeholder="여기에 'helloworld'를 타이핑하세요..." value="helloworld">
+            <br>
+            <button onclick="testVerification()">검증 테스트</button>
+        </div>
+        <div id="verification-result"></div>
+    </div>
+
+    <!-- Python 내보내기 섹션 -->
+    <div class="container python-section">
+        <h2>🐍 Python 코드 생성</h2>
+        <button onclick="generatePythonCode()">Python 코드 생성</button>
+        <div id="python-code" class="result"></div>
+    </div>
+
+    <script>
+        var tdna = new TypingDNA();
+        var userAPatterns = [];
+        var userBPatterns = [];
+        var verificationPattern = null;
+
+        function enrollUserA() {
+            var input = document.getElementById('user-a-input');
+            var text = input.value;
+            
+            if (text.toLowerCase() !== 'helloworld') {
+                alert('"helloworld"를 정확히 입력해주세요!');
+                return;
+            }
+            
+            tdna = new TypingDNA(); // 데이터 초기화
+            var pattern = tdna.getTypingPattern({
+                type: 2,
+                text: text
+            });
+            
+            userAPatterns.push(pattern);
+            updateUserAStatus();
+            showUserAPatterns();
+            
+            input.value = 'helloworld';
+            input.focus();
+        }
+
+        function enrollUserB() {
+            var input = document.getElementById('user-b-input');
+            var text = input.value;
+            
+            if (text.toLowerCase() !== 'helloworld') {
+                alert('"helloworld"를 정확히 입력해주세요!');
+                return;
+            }
+            
+            tdna = new TypingDNA(); // 데이터 초기화
+            var pattern = tdna.getTypingPattern({
+                type: 2,
+                text: text
+            });
+            
+            userBPatterns.push(pattern);
+            updateUserBStatus();
+            showUserBPatterns();
+            
+            input.value = 'helloworld';
+            input.focus();
+        }
+
+        function testVerification() {
+            var input = document.getElementById('verification-input');
+            var text = input.value;
+            
+            if (text.toLowerCase() !== 'helloworld') {
+                alert('"helloworld"를 정확히 입력해주세요!');
+                return;
+            }
+            
+            tdna = new TypingDNA(); // 데이터 초기화
+            verificationPattern = tdna.getTypingPattern({
+                type: 2,
+                text: text
+            });
+            
+            document.getElementById('verification-result').innerHTML = 
+                '<h3>✅ 검증 패턴 생성 완료!</h3>' +
+                '<div class="pattern-display">' + verificationPattern + '</div>';
+            
+            input.value = 'helloworld';
+            input.focus();
+        }
+
+        function updateUserAStatus() {
+            var status = document.getElementById('user-a-status');
+            if (userAPatterns.length >= 1) {
+                status.textContent = '등록 완료 (1/1)';
+                status.className = 'status enrolled';
+            } else {
+                status.textContent = '등록 중... (0/1)';
+                status.className = 'status not-enrolled';
+            }
+            
+            if (userAPatterns.length >= 1 && userBPatterns.length >= 1) {
+                document.getElementById('verification-section').style.display = 'block';
+            }
+        }
+
+        function updateUserBStatus() {
+            var status = document.getElementById('user-b-status');
+            if (userBPatterns.length >= 1) {
+                status.textContent = '등록 완료 (1/1)';
+                status.className = 'status enrolled';
+            } else {
+                status.textContent = '등록 중... (0/1)';
+                status.className = 'status not-enrolled';
+            }
+            
+            if (userAPatterns.length >= 1 && userBPatterns.length >= 1) {
+                document.getElementById('verification-section').style.display = 'block';
+            }
+        }
+
+        function showUserAPatterns() {
+            var container = document.getElementById('user-a-patterns');
+            var list = document.getElementById('user-a-pattern-list');
+            
+            list.innerHTML = '';
+            userAPatterns.forEach((pattern, index) => {
+                list.innerHTML += '<div class="pattern-display">패턴 ' + (index + 1) + ': ' + pattern + '</div>';
+            });
+            
+            container.style.display = 'block';
+        }
+
+        function showUserBPatterns() {
+            var container = document.getElementById('user-b-patterns');
+            var list = document.getElementById('user-b-pattern-list');
+            
+            list.innerHTML = '';
+            userBPatterns.forEach((pattern, index) => {
+                list.innerHTML += '<div class="pattern-display">패턴 ' + (index + 1) + ': ' + pattern + '</div>';
+            });
+            
+            container.style.display = 'block';
+        }
+
+        function clearUserA() {
+            userAPatterns = [];
+            updateUserAStatus();
+            document.getElementById('user-a-patterns').style.display = 'none';
+            document.getElementById('user-a-input').value = 'helloworld';
+        }
+
+        function clearUserB() {
+            userBPatterns = [];
+            updateUserBStatus();
+            document.getElementById('user-b-patterns').style.display = 'none';
+            document.getElementById('user-b-input').value = 'helloworld';
+        }
+
+        function generatePythonCode() {
+            if (userAPatterns.length < 1 || userBPatterns.length < 1 || !verificationPattern) {
+                alert('사용자 A와 B를 각각 1번씩 등록하고, 검증 패턴을 생성한 후 다시 시도해주세요!');
+                return;
+            }
+            
+            var pythonCode = `import requests
+import base64
+import json
+
+def test_typingdna_verification():
+    """TypingDNA 사용자 구분 테스트 (실제 타이핑 패턴)"""
+    
+    # Authentication API 키와 시크릿
+    api_key = "3a07f4dae8484fb7f70d0d0613a3a3e4"
+    api_secret = "d97ae110a884c19f47318d54373e27d9"
+    
+    # Basic 인증 헤더
+    auth_string = f"{api_key}:{api_secret}"
+    auth_encoded = base64.b64encode(auth_string.encode('utf-8')).decode('utf-8')
+    
+    headers = {
+        "Authorization": f"Basic {auth_encoded}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    
+    # 사용자 A의 등록 패턴들 (실제 타이핑)
+    user_a_patterns = [
+${userAPatterns.map(pattern => `        "${pattern}"`).join(',\n')}
+    ]
+    
+    # 사용자 B의 등록 패턴들 (실제 타이핑)
+    user_b_patterns = [
+${userBPatterns.map(pattern => `        "${pattern}"`).join(',\n')}
+    ]
+    
+    # 검증 패턴 (실제 타이핑)
+    verification_pattern = "${verificationPattern}"
+    
+    print("🚀 TypingDNA 사용자 구분 테스트 (실제 타이핑)")
+    print("=" * 60)
+    
+    # 1단계: 사용자 A 등록
+    print("\\n📝 1단계: 사용자 A 등록")
+    enroll_user("user_a", user_a_patterns, headers)
+    
+    # 2단계: 사용자 B 등록
+    print("\\n📝 2단계: 사용자 B 등록")
+    enroll_user("user_b", user_b_patterns, headers)
+    
+    # 3단계: 검증 테스트
+    print("\\n🔍 3단계: 검증 테스트")
+    print("=" * 60)
+    
+    # 테스트 1: 검증 패턴으로 사용자 A 인증
+    print("\\n🧪 테스트 1: 검증 패턴으로 사용자 A 인증")
+    result_a = verify_user("user_a", verification_pattern, headers)
+    
+    # 테스트 2: 검증 패턴으로 사용자 B 인증
+    print("\\n🧪 테스트 2: 검증 패턴으로 사용자 B 인증")
+    result_b = verify_user("user_b", verification_pattern, headers)
+    
+    # 결과 분석
+    print("\\n📊 결과 분석")
+    print("=" * 60)
+    
+    if result_a and not result_b:
+        print("✅ 성공: 사용자 A로 정확히 인식됨")
+    elif result_b and not result_a:
+        print("✅ 성공: 사용자 B로 정확히 인식됨")
+    elif result_a and result_b:
+        print("⚠️ 경고: 두 사용자 모두 인증됨 (모호함)")
+    else:
+        print("❌ 실패: 어떤 사용자도 인증되지 않음")
+    
+    return result_a, result_b
+
+def enroll_user(user_id, patterns, headers):
+    """사용자 등록"""
+    url = f"https://api.typingdna.com/auto/{user_id}"
+    
+    for i, pattern in enumerate(patterns, 1):
+        print(f"📝 패턴 {i} 등록 중...")
+        
+        payload = {"tp": pattern}
+        
+        try:
+            response = requests.post(url, headers=headers, data=payload, timeout=10)
+            
+            if response.status_code == 200:
+                result = response.json()
+                print(f"✅ 패턴 {i} 등록 성공!")
+                print(f"   Action: {result.get('action', 'N/A')}")
+                print(f"   Enrollment: {result.get('enrollment', 'N/A')}")
+            else:
+                print(f"❌ 패턴 {i} 등록 실패: {response.status_code}")
+                
+        except Exception as e:
+            print(f"❌ 오류: {e}")
+
+def verify_user(user_id, pattern, headers):
+    """사용자 검증"""
+    url = f"https://api.typingdna.com/auto/{user_id}"
+    payload = {"tp": pattern}
+    
+    try:
+        response = requests.post(url, headers=headers, data=payload, timeout=10)
+        
+        if response.status_code == 200:
+            result = response.json()
+            result_value = result.get('result', 'N/A')
+            high_confidence = result.get('high_confidence', 'N/A')
+            
+            print(f"Status: {response.status_code}")
+            print(f"Result: {result_value}")
+            print(f"High Confidence: {high_confidence}")
+            
+            if result_value == 1:
+                print("🎉 사용자 인증 성공!")
+                return True
+            else:
+                print("❌ 사용자 인증 실패!")
+                return False
+        else:
+            print(f"❌ 검증 요청 실패: {response.status_code}")
+            return None
+            
+    except Exception as e:
+        print(f"❌ 오류: {e}")
+        return None
+
+if __name__ == "__main__":
+    test_typingdna_verification()`;
+            
+            document.getElementById('python-code').textContent = pythonCode;
+        }
+
+        window.onload = function() {
+            // 초기화
+            updateUserAStatus();
+            updateUserBStatus();
+        };
+    </script>
+</body>
+</html> 

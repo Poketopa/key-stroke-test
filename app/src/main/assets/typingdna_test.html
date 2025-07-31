@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TypingDNA 테스트</title>
+    <script src="https://www.typingdna.com/scripts/typingdna.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .user-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .text-area {
+            width: 100%;
+            height: 150px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            resize: none;
+            margin-bottom: 20px;
+        }
+        .button {
+            background: #2196F3;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+        }
+        .button:hover {
+            background: #1976D2;
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .button.secondary {
+            background: #FF9800;
+        }
+        .button.secondary:hover {
+            background: #F57C00;
+        }
+        .button.success {
+            background: #4CAF50;
+        }
+        .button.success:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .test-instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .pattern-count {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TypingDNA 사용자 구분 테스트</h1>
+        
+        <div class="user-info" id="userInfo">
+            <strong>현재 사용자:</strong> <span id="currentUser">user123456</span>
+        </div>
+
+        <div class="test-instructions">
+            <h4>테스트 방법:</h4>
+            <ol>
+                <li>사용자 A로 로그인하여 타이핑 패턴을 저장합니다</li>
+                <li>사용자 B로 로그인하여 타이핑 패턴을 저장합니다</li>
+                <li>각 사용자로 로그인하여 패턴 검증을 테스트합니다</li>
+            </ol>
+        </div>
+
+        <div>
+            <h3>타이핑 테스트</h3>
+            <p>아래 텍스트를 타이핑해주세요:</p>
+            <textarea 
+                id="typingArea" 
+                class="text-area" 
+                placeholder="여기에 타이핑하세요..."
+                onkeyup="onKeyUp(event)"
+                onkeydown="onKeyDown(event)"
+                oninput="onInput(event)"
+                onfocus="onFocus()"
+                onpaste="onPaste(event)"
+                oncut="onCut(event)"
+            ></textarea>
+            <div class="pattern-count" id="patternCount"></div>
+        </div>
+
+        <div>
+            <button class="button" onclick="savePattern()">패턴 저장</button>
+            <button class="button secondary" onclick="verifyPattern()">패턴 검증</button>
+            <button class="button success" onclick="compareUsers()">사용자 비교</button>
+            <button class="button" onclick="testConnection()">연결 테스트</button>
+            <button class="button" onclick="simpleTest()">간단 테스트</button>
+            <button class="button" onclick="testApiKey()">API 키 테스트</button>
+            <button class="button" onclick="minimalTest()">최소 테스트</button>
+            <button class="button" onclick="checkUser()">사용자 확인</button>
+            <button class="button" onclick="clearText()">텍스트 지우기</button>
+            <button class="button" onclick="showRealTimePattern()">실시간 패턴 확인</button>
+            <button class="button" onclick="startRecording()">녹화 시작</button>
+            <button class="button secondary" onclick="clearPattern()">패턴 초기화</button>
+        </div>
+
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        let userId = "user123456";
+        let tdna = new TypingDNA();
+        let isRecording = false;
+        let keyCount = 0;
+        
+        // 고정된 user_id 값
+        const USER_A = "B6E3DC0FF5A19566DCA703F84A2C09BDD5DD22891E09B9FB3FC436C5BE9ECF9C";
+        const USER_B = "36D2620917D391C0700B144223FFAC4D7993AD2C8CB90BC072A37BB8372B5A6A";
+        
+        // 기본 user_id 생성 (고정값 사용)
+        function getUserA() {
+            return USER_A;
+        }
+        
+        function getUserB() {
+            return USER_B;
+        }
+
+        function setUserId(id) {
+            userId = id;
+            document.getElementById('currentUser').textContent = userId;
+            document.getElementById('userInfo').style.backgroundColor = 
+                userId === 'user123456' ? '#e8f5e8' : '#fff3e0';
+            clearText();
+            
+            // 디버깅을 위한 로그
+            console.log('User ID set to:', userId);
+            if (typeof Android !== 'undefined') {
+                Android.logError(`User ID set to: ${userId}`);
+            }
+        }
+
+        function onKeyDown(event) {
+            if (!isRecording) {
+                isRecording = true;
+                tdna.start();
+            }
+            tdna.addKeyDown(event);
+            keyCount++;
+            updatePatternCount();
+            
+            console.log('JavaScript Key Down:', event.keyCode, 'Key:', event.key);
+            if (typeof Android !== 'undefined') {
+                Android.logError(`JavaScript Key Down: ${event.keyCode} (${event.key})`);
+                Android.logKeyEvent(event.keyCode, 'DOWN');
+            }
+        }
+
+        function onKeyUp(event) {
+            tdna.addKeyUp(event);
+            console.log('JavaScript Key Up:', event.keyCode, 'Key:', event.key);
+            if (typeof Android !== 'undefined') {
+                Android.logError(`JavaScript Key Up: ${event.keyCode} (${event.key})`);
+                Android.logKeyEvent(event.keyCode, 'UP');
+            }
+        }
+        
+        function onInput(event) {
+            console.log('Input event:', event.target.value);
+            if (typeof Android !== 'undefined') {
+                Android.logError(`Input event: ${event.target.value}`);
+                
+                // 입력된 텍스트의 각 문자에 대해 키 이벤트 시뮬레이션
+                const currentValue = event.target.value;
+                if (currentValue.length > 0) {
+                    const lastChar = currentValue.charAt(currentValue.length - 1);
+                    const keyCode = lastChar.charCodeAt(0);
+                    
+                    // 키 다운 이벤트 시뮬레이션
+                    Android.logKeyEvent(keyCode, 'DOWN');
+                    
+                    // 키 업 이벤트 시뮬레이션 (약간의 지연 후)
+                    setTimeout(() => {
+                        Android.logKeyEvent(keyCode, 'UP');
+                    }, 50);
+                }
+            }
+        }
+        
+        function onFocus() {
+            console.log('Text area focused');
+            if (typeof Android !== 'undefined') {
+                Android.logError('Text area focused');
+            }
+        }
+        
+        function onPaste(event) {
+            console.log('Paste event:', event.clipboardData?.getData('text'));
+            if (typeof Android !== 'undefined') {
+                Android.logError(`Paste event: ${event.clipboardData?.getData('text')}`);
+            }
+        }
+        
+        function onCut(event) {
+            console.log('Cut event');
+            if (typeof Android !== 'undefined') {
+                Android.logError('Cut event');
+            }
+        }
+
+        function updatePatternCount() {
+            document.getElementById('patternCount').textContent = 
+                `타이핑된 키 수: ${keyCount}`;
+        }
+
+        function savePattern() {
+            // 안드로이드 네이티브 패턴 사용
+            let pattern;
+            if (typeof Android !== 'undefined') {
+                pattern = Android.getAndroidTypingPattern();
+                console.log('안드로이드 네이티브 패턴:', pattern);
+                Android.logError(`안드로이드 네이티브 패턴: ${pattern}`);
+            } else {
+                pattern = tdna.getTypingPattern({type: 2}); // Extended 타입 사용
+                console.log('JavaScript 패턴:', pattern);
+            }
+            
+            if (!pattern) {
+                showResult('먼저 텍스트를 타이핑해주세요.', 'error');
+                return;
+            }
+
+            const apiKey = "3a07f4dae8484fb7f70d0d0613a3a3e4";
+            const apiSecret = "d97ae110a884c19f47318d54373e27d9"; // 실제 API Secret을 입력하세요
+            const auth = btoa(apiKey + ":" + apiSecret);
+
+            const requestBody = {
+                tp: pattern,
+                user_id: userId,
+                text: document.getElementById('typingArea').value || 'test_text'
+            };
+            
+            console.log('=== 패턴 저장 ===');
+            console.log('Current userId:', userId);
+            console.log('User ID length:', userId.length);
+            console.log('User ID type:', typeof userId);
+            console.log('Request body:', requestBody);
+            
+            if (typeof Android !== 'undefined') {
+                Android.logError(`패턴 저장 - User ID: ${userId}, Length: ${userId.length}, Type: ${typeof userId}`);
+            }
+            
+            fetch(`https://api.typingdna.com/auto/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Basic ' + auth,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `tp=${pattern}&text=${encodeURIComponent(document.getElementById('typingArea').value || 'test_text')}`
+            })
+            .then(response => {
+                console.log(`저장 API 응답: ${response.status} ${response.statusText}`);
+                if (typeof Android !== 'undefined') {
+                    Android.logError(`저장 API 응답: ${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('저장 응답 데이터:', data);
+                if (typeof Android !== 'undefined') {
+                    Android.logError(`저장 응답 데이터: ${JSON.stringify(data)}`);
+                }
+                
+                if (data.status === 200) {
+                    showResult(`${userId}의 타이핑 패턴이 저장되었습니다. (${data.message})`, 'success');
+                    Android.onPatternSaved(userId, true);
+                } else {
+                    showResult(`저장 실패: ${data.message}`, 'error');
+                    Android.onPatternSaved(userId, false);
+                }
+            })
+            .catch(error => {
+                let errorMessage = `오류: ${error.message}`;
+                
+                // 더 구체적인 에러 정보 추가
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = '네트워크 연결 오류: 인터넷 연결을 확인하세요.';
+                } else if (error.message.includes('CORS')) {
+                    errorMessage = 'CORS 오류: 브라우저 보안 정책으로 인한 차단.';
+                } else if (error.message.includes('401')) {
+                    errorMessage = '인증 오류: API 키를 확인하세요.';
+                } else if (error.message.includes('403')) {
+                    errorMessage = '권한 오류: API 접근 권한이 없습니다.';
+                } else if (error.message.includes('404')) {
+                    errorMessage = 'API 엔드포인트 오류: 잘못된 URL입니다.';
+                } else if (error.message.includes('500')) {
+                    errorMessage = '서버 오류: TypingDNA 서버 문제입니다.';
+                }
+                
+                showResult(errorMessage, 'error');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(errorMessage);
+                }
+                console.error('API Error:', error);
+                console.error('Error details:', {
+                    name: error.name,
+                    message: error.message,
+                    stack: error.stack
+                });
+            });
+        }
+
+        function verifyPattern() {
+            // 안드로이드 네이티브 패턴 사용
+            let pattern;
+            if (typeof Android !== 'undefined') {
+                pattern = Android.getAndroidTypingPattern();
+                console.log('안드로이드 네이티브 검증 패턴:', pattern);
+                Android.logError(`안드로이드 네이티브 검증 패턴: ${pattern}`);
+            } else {
+                pattern = tdna.getTypingPattern({type: 2}); // Extended 타입 사용
+                console.log('JavaScript 검증 패턴:', pattern);
+            }
+            
+            if (!pattern) {
+                showResult('먼저 텍스트를 타이핑해주세요.', 'error');
+                return;
+            }
+
+            const apiKey = "3a07f4dae8484fb7f70d0d0613a3a3e4";
+            const apiSecret = "d97ae110a884c19f47318d54373e27d9"; // 실제 API Secret을 입력하세요
+            const auth = btoa(apiKey + ":" + apiSecret);
+
+            fetch(`https://api.typingdna.com/auto/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Basic ' + auth,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `tp=${pattern}&text=${encodeURIComponent(document.getElementById('typingArea').value || 'test_text')}`
+            })
+            .then(response => {
+                console.log(`검증 API 응답: ${response.status} ${response.statusText}`);
+                if (typeof Android !== 'undefined') {
+                    Android.logError(`검증 API 응답: ${response.status} ${response.statusText}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('검증 응답 데이터:', data);
+                if (typeof Android !== 'undefined') {
+                    Android.logError(`검증 응답 데이터: ${JSON.stringify(data)}`);
+                }
+                
+                if (data.status === 200) {
+                    const score = data.score || 0;
+                    const message = `검증 결과: ${score}% 일치\n사용자: ${userId}\n메시지: ${data.message}`;
+                    showResult(message, score > 50 ? 'success' : 'error');
+                    Android.onPatternVerified(userId, score);
+                } else {
+                    showResult(`검증 실패: ${data.message}`, 'error');
+                }
+            })
+            .catch(error => {
+                const errorMessage = `오류: ${error.message}`;
+                showResult(errorMessage, 'error');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(errorMessage);
+                }
+                console.error('API Error:', error);
+            });
+        }
+
+        function compareUsers() {
+            // 안드로이드 네이티브 패턴 사용
+            let pattern;
+            if (typeof Android !== 'undefined') {
+                pattern = Android.getAndroidTypingPattern();
+                console.log('안드로이드 네이티브 비교 패턴:', pattern);
+                Android.logError(`안드로이드 네이티브 비교 패턴: ${pattern}`);
+            } else {
+                pattern = tdna.getTypingPattern({type: 2}); // Extended 타입 사용
+                console.log('JavaScript 비교 패턴:', pattern);
+            }
+            
+            if (!pattern) {
+                showResult('먼저 텍스트를 타이핑해주세요.', 'error');
+                return;
+            }
+
+            const apiKey = "3a07f4dae8484fb7f70d0d0613a3a3e4";
+            const apiSecret = "d97ae110a884c19f47318d54373e27d9";
+            const auth = btoa(apiKey + ":" + apiSecret);
+
+            // 사용자 A와 B 모두에 대해 검증 시도
+            Promise.all([
+                fetch(`https://api.typingdna.com/auto/${getUserA()}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + auth,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `tp=${pattern}&text=${encodeURIComponent(document.getElementById('typingArea').value || 'test_text')}`
+                }).then(res => res.json()),
+                fetch(`https://api.typingdna.com/auto/${getUserB()}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + auth,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `tp=${pattern}&text=${encodeURIComponent(document.getElementById('typingArea').value || 'test_text')}`
+                }).then(res => res.json())
+            ])
+            .then(([userAResult, userBResult]) => {
+                const scoreA = userAResult.status === 200 ? (userAResult.score || 0) : 0;
+                const scoreB = userBResult.status === 200 ? (userBResult.score || 0) : 0;
+                
+                let message = `사용자 비교 결과:\n`;
+                message += `사용자 A (${getUserA()}): ${scoreA}% 일치\n`;
+                message += `사용자 B (${getUserB()}): ${scoreB}% 일치\n\n`;
+                
+                if (scoreA > scoreB && scoreA > 50) {
+                    message += `결론: 사용자 A로 판별됨`;
+                } else if (scoreB > scoreA && scoreB > 50) {
+                    message += `결론: 사용자 B로 판별됨`;
+                } else {
+                    message += `결론: 명확한 구분 불가`;
+                }
+                
+                showResult(message, 'info');
+            })
+            .catch(error => {
+                const errorMessage = `비교 오류: ${error.message}`;
+                showResult(errorMessage, 'error');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(errorMessage);
+                }
+                console.error('Comparison Error:', error);
+            });
+        }
+
+        function testConnection() {
+            showResult('연결 테스트 중...', 'info');
+
+            // 1. 가장 간단한 네트워크 테스트
+            fetch('https://httpbin.org/get')
+            .then(response => {
+                if (response.ok) {
+                    showResult('✅ 기본 네트워크 연결 성공', 'success');
+                    return response.json();
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            })
+            .then(data => {
+                showResult(`✅ 네트워크 응답: ${JSON.stringify(data).substring(0, 100)}...`, 'success');
+                
+                // 2. TypingDNA API 테스트
+                const apiKey = "3a07f4dae8484fb7f70d0d0613a3a3e4";
+                const apiSecret = "d97ae110a884c19f47318d54373e27d9";
+                const auth = btoa(apiKey + ":" + apiSecret);
+                
+                const userId = USER_A;
+                return fetch(`https://api.typingdna.com/auto/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + auth,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `tp=test_pattern`
+                });
+            })
+            .then(response => {
+                if (response.ok) {
+                    showResult('✅ TypingDNA API 연결 성공!', 'success');
+                } else {
+                    showResult(`❌ TypingDNA API 연결 실패: ${response.status} ${response.statusText}`, 'error');
+                }
+            })
+            .catch(error => {
+                let errorMessage = `❌ 연결 테스트 실패: ${error.message}`;
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = '❌ 네트워크 연결 오류: 인터넷 연결을 확인하세요.';
+                } else if (error.message.includes('CORS')) {
+                    errorMessage = '❌ CORS 오류: 브라우저 보안 정책으로 인한 차단.';
+                }
+                
+                showResult(errorMessage, 'error');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(errorMessage);
+                }
+                console.error('Connection test error:', error);
+            });
+        }
+
+        function simpleTest() {
+            showResult('간단한 네트워크 테스트 시작...', 'info');
+            
+            // 1. 기본 네트워크 테스트
+            fetch('https://httpbin.org/ip')
+            .then(response => {
+                showResult(`응답 상태: ${response.status} ${response.statusText}`, 'info');
+                return response.json();
+            })
+            .then(data => {
+                showResult(`✅ 성공! IP: ${data.origin}`, 'success');
+                
+                // 2. TypingDNA API 기본 테스트 - 고정된 값으로 테스트
+                const apiKey = "3a07f4dae8484fb7f70d0d0613a3a3e4";
+                const apiSecret = "d97ae110a884c19f47318d54373e27d9";
+                const auth = btoa(apiKey + ":" + apiSecret);
+                
+                const testRequest = {
+                    tp: 'test_pattern_123',
+                    user_id: USER_A,
+                    text: 'test_text'
+                };
+                
+                console.log('=== 간단 테스트 ===');
+                console.log('Test request:', testRequest);
+                console.log('User ID length:', testRequest.user_id.length);
+                
+                // 실제 TypingDNA 패턴 사용
+                const realPattern = "0,3.2,0,1,6,3255507267,0,-1,-1,0,-1,-1,0,-1,-1,11,115,112,11,29,26,1,0,0,1,2,1,4210384742,1,1,0,0,0,1,2560,1440,2,1015,138,0,2343085426|103,6167,84,71|101,48,82,69|109,100,105,77|105,110,69,73|110,83,92,78|105,79,86,73";
+                
+                return fetch(`https://api.typingdna.com/auto/${USER_A}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + auth,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: `tp=${encodeURIComponent(realPattern)}&text=gemini`
+                });
+            })
+            .then(response => {
+                showResult(`TypingDNA API 응답: ${response.status} ${response.statusText}`, 'info');
+                return response.json();
+            })
+            .then(data => {
+                showResult(`✅ TypingDNA API 성공: ${JSON.stringify(data)}`, 'success');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(`TypingDNA API 테스트 성공: ${JSON.stringify(data)}`);
+                }
+            })
+            .catch(error => {
+                const errorMsg = `❌ 실패: ${error.message}`;
+                showResult(errorMsg, 'error');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(errorMsg);
+                }
+                console.error('Simple test error:', error);
+            });
+        }
+
+        function testApiKey() {
+            showResult('API 키 테스트 중...', 'info');
+            
+            const apiKey = "3a07f4dae8484fb7f70d0d0613a3a3e4";
+            const apiSecret = "d97ae110a884c19f47318d54373e27d9";
+            const auth = btoa(apiKey + ":" + apiSecret);
+            
+            const testUserId = USER_A;
+            const requestBody = {
+                tp: 'test_pattern_for_key_validation',
+                user_id: testUserId,
+                text: 'test_text_for_key_validation'
+            };
+            
+            console.log('=== API 키 테스트 ===');
+            console.log('User ID:', testUserId);
+            console.log('User ID length:', testUserId.length);
+            console.log('Request body:', requestBody);
+            
+            if (typeof Android !== 'undefined') {
+                Android.logError(`API 키 테스트 - User ID: ${testUserId}, Length: ${testUserId.length}`);
+            }
+            
+            // API 키 유효성 테스트
+            // 실제 TypingDNA 패턴 사용
+            const realPattern = "0,3.2,0,1,6,3255507267,0,-1,-1,0,-1,-1,0,-1,-1,11,115,112,11,29,26,1,0,0,1,2,1,4210384742,1,1,0,0,0,1,2560,1440,2,1015,138,0,2343085426|103,6167,84,71|101,48,82,69|109,100,105,77|105,110,69,73|110,83,92,78|105,79,86,73";
+            
+            fetch(`https://api.typingdna.com/auto/${testUserId}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Basic ' + auth,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `tp=${encodeURIComponent(realPattern)}&text=gemini`
+            })
+            .then(response => {
+                showResult(`API 응답: ${response.status} ${response.statusText}`, 'info');
+                if (response.status === 401) {
+                    showResult('❌ API 키가 잘못되었습니다.', 'error');
+                } else if (response.status === 200 || response.status === 201) {
+                    showResult('✅ API 키가 유효합니다.', 'success');
+                } else {
+                    showResult(`⚠️ API 응답: ${response.status}`, 'info');
+                }
+                return response.json();
+            })
+            .then(data => {
+                showResult(`API 응답 데이터: ${JSON.stringify(data)}`, 'info');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(`API 키 테스트 결과: ${JSON.stringify(data)}`);
+                }
+            })
+            .catch(error => {
+                const errorMsg = `❌ API 키 테스트 실패: ${error.message}`;
+                showResult(errorMsg, 'error');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(errorMsg);
+                }
+                console.error('API key test error:', error);
+            });
+        }
+
+        function minimalTest() {
+            showResult('최소 테스트 시작...', 'info');
+            
+            const apiKey = "3a07f4dae8484fb7f70d0d0613a3a3e4";
+            const apiSecret = "d97ae110a884c19f47318d54373e27d9";
+            const auth = btoa(apiKey + ":" + apiSecret);
+            
+            // 가장 간단한 요청
+            const minimalRequest = {
+                tp: "test",
+                user_id: USER_A,
+                text: "test"
+            };
+            
+            console.log('=== 최소 테스트 ===');
+            console.log('Request:', minimalRequest);
+            console.log('User ID:', minimalRequest.user_id);
+            console.log('User ID length:', minimalRequest.user_id.length);
+            
+            // 실제 TypingDNA 패턴 사용
+            const realPattern = "0,3.2,0,1,6,3255507267,0,-1,-1,0,-1,-1,0,-1,-1,11,115,112,11,29,26,1,0,0,1,2,1,4210384742,1,1,0,0,0,1,2560,1440,2,1015,138,0,2343085426|103,6167,84,71|101,48,82,69|109,100,105,77|105,110,69,73|110,83,92,78|105,79,86,73";
+            
+            fetch(`https://api.typingdna.com/auto/${USER_A}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Basic ' + auth,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `tp=${encodeURIComponent(realPattern)}&text=gemini`
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                showResult(`응답: ${JSON.stringify(data)}`, 'info');
+            })
+            .catch(error => {
+                console.error('Minimal test error:', error);
+                showResult(`오류: ${error.message}`, 'error');
+            });
+        }
+
+        function checkUser() {
+            showResult('사용자 확인 중...', 'info');
+            
+            const apiKey = "3a07f4dae8484fb7f70d0d0613a3a3e4";
+            const apiSecret = "d97ae110a884c19f47318d54373e27d9";
+            const auth = btoa(apiKey + ":" + apiSecret);
+            
+            const userId = USER_A;
+            
+            console.log('=== 사용자 확인 테스트 ===');
+            console.log('User ID:', userId);
+            
+            fetch(`https://api.typingdna.com/user/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': 'Basic ' + auth
+                }
+            })
+            .then(response => {
+                showResult(`사용자 확인 응답: ${response.status} ${response.statusText}`, 'info');
+                return response.json();
+            })
+            .then(data => {
+                showResult(`✅ 사용자 확인 성공: ${JSON.stringify(data)}`, 'success');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(`사용자 확인 성공: ${JSON.stringify(data)}`);
+                }
+            })
+            .catch(error => {
+                const errorMsg = `❌ 사용자 확인 실패: ${error.message}`;
+                showResult(errorMsg, 'error');
+                if (typeof Android !== 'undefined') {
+                    Android.logError(errorMsg);
+                }
+                console.error('Check user error:', error);
+            });
+        }
+
+        function clearText() {
+            document.getElementById('typingArea').value = '';
+            tdna.reset();
+            isRecording = false;
+            keyCount = 0;
+            updatePatternCount();
+            document.getElementById('result').style.display = 'none';
+        }
+        
+        function clearPattern() {
+            if (typeof Android !== 'undefined') {
+                Android.clearPattern();
+                const eventCount = Android.getKeyEventCount();
+                showResult(`패턴이 초기화되었습니다.\n이벤트 수: ${eventCount}\n새로운 타이핑을 시작하세요.`, 'info');
+            } else {
+                showResult('안드로이드 환경에서만 사용 가능합니다.', 'error');
+            }
+        }
+        
+        function showRealTimePattern() {
+            if (typeof Android !== 'undefined') {
+                const eventCount = Android.getKeyEventCount();
+                const pattern = Android.getAndroidTypingPattern();
+                const currentText = document.getElementById('typingArea').value;
+                const message = `실시간 패턴 정보:\n이벤트 수: ${eventCount}\n현재 텍스트: "${currentText}"\n텍스트 길이: ${currentText.length}\n패턴: ${pattern}`;
+                showResult(message, 'info');
+                
+                // 패턴을 파일에 저장
+                Android.savePatternToFile(pattern, eventCount, currentText);
+            } else {
+                showResult('안드로이드 환경에서만 사용 가능합니다.', 'error');
+            }
+        }
+        
+        function startRecording() {
+            if (typeof Android !== 'undefined') {
+                Android.startAndroidRecording();
+                showResult('안드로이드 녹화가 시작되었습니다. 키보드 이벤트를 캡처합니다.', 'info');
+            } else {
+                showResult('안드로이드 환경에서만 사용 가능합니다.', 'error');
+            }
+        }
+
+        function showResult(message, type) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = message;
+            resultDiv.className = `result ${type}`;
+            resultDiv.style.display = 'block';
+        }
+
+        // 페이지 로드 시 초기화
+        window.onload = function() {
+            setUserId(userId);
+            
+            // 텍스트 영역에 포커스 설정
+            const typingArea = document.getElementById('typingArea');
+            if (typingArea) {
+                typingArea.focus();
+            }
+            
+            // 안드로이드 환경에서 녹화 시작
+            if (typeof Android !== 'undefined') {
+                Android.startAndroidRecording();
+            }
+        };
+    </script>
+</body>
+</html>
